@@ -1,9 +1,10 @@
 // Fill out your copyright notice in the Description page of Project Settings.
+//
+//#include "Engine/TriggerVolume.h"
+//#include "Gameframework/Actor.h"
 
 #include "OpenDoor.h"
-
-#include "Gameframework/Actor.h"
-
+#include "BuildingEscape.h"
 
 // UE console log macro
 // UE_LOG(LogTemp, Warning, TEXT("Log Message!"));
