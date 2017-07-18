@@ -8,10 +8,12 @@
 /Intermediate/
 /Saved
 
-Content/StarterContent/
+Content/StarterContent/Textures
+Content/StarterContent/HDRI
 
 ##########################
 #   VS Generated Files   #
 ##########################
 
 *.VC.db
+*.suo
