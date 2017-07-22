@@ -25,9 +25,16 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 private:
-	//auto WorldViewPoint;
 
 	float Reach = 100.0f;
 		
+	class UPhysicsHandleComponent* PhysicsHandle = nullptr;
+
+	class UInputComponent* InputComponent = nullptr;
 	
+	// Ray-cast what's in reach
+	void Grab();
+
+	// Called when grab is released
+	void Release();
 };
