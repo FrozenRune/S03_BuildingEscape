@@ -31,13 +31,9 @@ void UGrabber::BeginPlay()
 void UGrabber::FindPhysicsHandleComponent()
 {
 	PhysicsHandle = GetOwner()->FindComponentByClass<UPhysicsHandleComponent>();
-	if (PhysicsHandle)
+	if (PhysicsHandle == nullptr)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s is ready with physics handle component!"), *GetOwner()->GetName());
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s missing physics handle component!"), *GetOwner()->GetName());
 	}
 }
 
@@ -47,8 +43,6 @@ void UGrabber::SetupInputComponent()
 	InputComponent = GetOwner()->FindComponentByClass<UInputComponent>();
 	if (InputComponent)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Input component ready for duty!"));
-		/// Bind the input axis
 		InputComponent->BindAction("Grab", IE_Pressed, this, &UGrabber::Grab);
 		InputComponent->BindAction("Grab", IE_Released, this, &UGrabber::Release);
 	}
@@ -58,10 +52,21 @@ void UGrabber::SetupInputComponent()
 	}
 }
 
+// Called every frame
+void UGrabber::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+{
+	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+	// if the physics hadle is attached
+	if (PhysicsHandle->GrabbedComponent)
+	{
+		// move the object that we're holding
+		PhysicsHandle->SetTargetLocation(GetReachLineEnd());
+	}
+}
+
 void UGrabber::Grab()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Grab pressed!"));
-
 	/// Line trace and reach any actor with physics body collision channel set
 	auto HitResult = GetFirstPhysicsBodyInReach();
 	auto ComponentToGrab = HitResult.GetComponent();
@@ -77,53 +82,34 @@ void UGrabber::Grab()
 
 void UGrabber::Release()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Grab released!"));
-
 	PhysicsHandle->ReleaseComponent();
 }
 
-// Called every frame
-void UGrabber::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+const FHitResult UGrabber::GetFirstPhysicsBodyInReach()
 {
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+	/// Line-trace (AKA ray-cast) out to reach distance
+	FHitResult HitResult;
+	FCollisionQueryParams TraceParam(FName(TEXT("")), false, GetOwner());
+	GetWorld()->LineTraceSingleByObjectType(OUT HitResult, GetReachLineStart(), GetReachLineEnd(), FCollisionObjectQueryParams(ECollisionChannel::ECC_PhysicsBody), TraceParam);
 
-	/// Get player view point this tick
-	FVector PlayerViewPointLocation;
-	FRotator PlayerViewPointRotation;
-	GetWorld()->GetFirstPlayerController()->GetPlayerViewPoint(OUT PlayerViewPointLocation, OUT PlayerViewPointRotation);
-
-	FVector LineTraceEnd = PlayerViewPointLocation + PlayerViewPointRotation.Vector() * Reach;
-
-	// if the physics hadle is attached
-	if (PhysicsHandle->GrabbedComponent)
-	{
-		// move the object that we're holding
-		PhysicsHandle->SetTargetLocation(LineTraceEnd);
-	}
+	return HitResult;
 }
 
-FHitResult UGrabber::GetFirstPhysicsBodyInReach() const
+FVector UGrabber::GetReachLineStart()
 {
-	/// Get player view point this tick
 	FVector PlayerViewPointLocation;
 	FRotator PlayerViewPointRotation;
 	GetWorld()->GetFirstPlayerController()->GetPlayerViewPoint(OUT PlayerViewPointLocation, OUT PlayerViewPointRotation);
 
-	FVector LineTraceEnd = PlayerViewPointLocation + PlayerViewPointRotation.Vector() * Reach;
+	return PlayerViewPointLocation;
+}
 
-	/// Setup query parameters
-	FCollisionQueryParams TraceParam(FName(TEXT("")), false, GetOwner());
+FVector UGrabber::GetReachLineEnd()
+{
+	FVector PlayerViewPointLocation;
+	FRotator PlayerViewPointRotation;
+	GetWorld()->GetFirstPlayerController()->GetPlayerViewPoint(OUT PlayerViewPointLocation, OUT PlayerViewPointRotation);
 
-	/// Line-trace (AKA ray-cast) out to reach distance
-	FHitResult Hit;
-	GetWorld()->LineTraceSingleByObjectType(OUT Hit, PlayerViewPointLocation, LineTraceEnd, FCollisionObjectQueryParams(ECollisionChannel::ECC_PhysicsBody), TraceParam);
-
-	AActor* ActorHit = Hit.GetActor();
-	if (ActorHit)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Hit: %s"), *(ActorHit->GetName()));
-	}
-
-	return Hit;
+	return PlayerViewPointLocation + PlayerViewPointRotation.Vector() * Reach;
 }
 

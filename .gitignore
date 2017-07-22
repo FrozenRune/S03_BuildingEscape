@@ -17,3 +17,5 @@ Content/StarterContent/HDRI
 
 *.VC.db
 *.suo
+*.VC.opendb
+*.sln
